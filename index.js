@@ -1,3 +1,12 @@
+// watchify index.js -p esmify -o bundle.js
+
+import cytoscape from "cytoscape";
+import { createTreeFromTreeArray } from "@lukeaus/plain-tree";
+
+const P = require("parsimmon");
+
+const snapToGrid = require("cytoscape-snap-to-grid");
+snapToGrid(cytoscape);
 
 let text = `\
 (CP 
@@ -27,79 +36,75 @@ let text = `\
 `;
 
 document.addEventListener("DOMContentLoaded", function () {
-  document.getElementById('problemexp').innerHTML = text;
-
-  function prettyPrint(x) {
-    let s = JSON.stringify(x, null, 2);
-    // console.log(s);
-    return s;
-  }
+  document.getElementById("problemexp").innerHTML = text;
 
   let ast = LispLike.Problem.tryParse(text);
-  let sast = prettyPrint(ast);
-  document.getElementById('problemast').innerHTML = sast;
+  let sast = JSON.stringify(ast, null, 2);
+  document.getElementById("problemast").innerHTML = sast;
+
+  let reftree = createTreeFromTreeArray(ast).flatMap();
+  let refnodes = reftree.map((x) => ({
+    data: {
+      id: x.id,
+      // parent: x.parent ? x.parent.id : null,
+      content: x.data.tag + (x.data.symbol ? x.data.symbol : ""),
+    },
+  }));
+  let refedges = [];
+  reftree.forEach((x) => {
+    if (x.parent) {
+      refedges.push({
+        data: { id: crypto.randomUUID(), source: x.parent.id, target: x.id },
+      });
+    }
+  });
 
   cy = cytoscape({
-    container: document.getElementById('cy'), // container to render in
-
+    container: document.getElementById("cy"),
     elements: {
-      nodes: [
-        { data: { id: 'a', parent: 'b' } },
-        { data: { id: 'b' } },
-        { data: { id: 'c', parent: 'b' } },
-        { data: { id: 'd' } },
-        { data: { id: 'e' } },
-        { data: { id: 'f', parent: 'e' } }
-      ],
-      edges: [
-        { data: { id: 'ad', source: 'b', target: 'd' } },
-        { data: { id: 'eb', source: 'b', target: 'f' } }
-
-      ]
+      nodes: refnodes,
+      edges: refedges,
+    },
+    layout: {
+      name: "breadthfirst",
     },
 
     style: [
       {
-        selector: 'node',
+        selector: "node",
         css: {
-          'shape': 'rectangle',
-          'content': 'data(id)',
-          'text-valign': 'center',
-          'text-halign': 'center'
-        }
+          shape: "rectangle",
+          content: "data(content)",
+          "text-valign": "center",
+          "text-halign": "center",
+        },
       },
       {
-        selector: ':parent',
+        selector: ":parent",
         css: {
-          'text-valign': 'top',
-          'text-halign': 'center',
-          'shape': 'round-rectangle',
-          'corner-radius': "10",
-          'padding': 3,
-          'label': ''
-        }
+          "text-valign": "top",
+          "text-halign": "center",
+          shape: "round-rectangle",
+          "corner-radius": "10",
+          padding: 3,
+          label: "",
+        },
       },
       {
-        selector: 'edge',
+        selector: "edge",
         css: {
-          'curve-style': 'bezier',
+          "curve-style": "bezier",
           // 'target-arrow-shape': 'triangle'
-        }
-      }
+        },
+      },
     ],
-
-    layout: {
-      name: 'grid',
-      // rows: 1
-    }
   });
 
   cy.snapToGrid();
-  cy.snapToGrid('snapOn');
-  cy.snapToGrid('gridOn');
-})
+  cy.snapToGrid("snapOn");
+  cy.snapToGrid("gridOn");
+});
 
-let P = Parsimmon;
 let LispLike = P.createLanguage({
   // problem -> expression*
   // TODO alternative form with ||
@@ -114,20 +119,32 @@ let LispLike = P.createLanguage({
 
   // FIXME now we run into the compling Millinial Prize Problem of "Defining English Word"
   Symbol: function () {
-    return P.regexp(/[a-zA-Z_\-][a-zA-Z0-9_\-']*/).desc("symbol");
+    return P.regexp(/[a-zA-Z_\-][a-zA-Z0-9_\-']*/)
+      .map((s) => ({ symbol: s, id: crypto.randomUUID(), children: [] }))
+      .desc("symbol");
   },
 
   // source -> /^\d+/
   Source: function () {
     return P.regexp(/\^\d+/)
-      .map(s => ({ tag: "LKS", source: s.slice(1) }))
+      .map((s) => ({
+        tag: "LKS",
+        source: s.slice(1),
+        id: crypto.randomUUID(),
+        children: [],
+      }))
       .desc("source");
   },
 
   // target -> /^t\d+/
   Target: function () {
     return P.regexp(/\^t\d+/)
-      .map(s => ({ tag: "LKT", target: s.slice(2) }))
+      .map((s) => ({
+        tag: "LKT",
+        target: s.slice(2),
+        id: crypto.randomUUID(),
+        children: [],
+      }))
       .desc("target");
   },
 
@@ -135,7 +152,11 @@ let LispLike = P.createLanguage({
   List: function (r) {
     return r.Expression.trim(P.optWhitespace)
       .atLeast(1)
-      .map(xs => ({ tag: xs[0], children: xs.slice(1) }))
+      .map((xs) => ({
+        tag: xs[0].symbol,
+        children: xs.slice(1),
+        id: crypto.randomUUID(),
+      }))
       .wrap(P.string("("), P.string(")"));
-  }
+  },
 });

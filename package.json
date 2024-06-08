@@ -1,0 +1,31 @@
+{
+  "name": "syntaxgolf2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "bundle.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/analytic-bias/SyntaxGolf2.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/analytic-bias/SyntaxGolf2/issues"
+  },
+  "homepage": "https://github.com/analytic-bias/SyntaxGolf2#readme",
+  "dependencies": {
+    "@lukeaus/plain-tree": "^2.1.2",
+    "cytoscape": "^3.29.2",
+    "cytoscape-snap-to-grid": "^2.0.0",
+    "flat": "^6.0.1",
+    "parsimmon": "^1.18.1"
+  },
+  "devDependencies": {
+    "browserify": "^17.0.0",
+    "esmify": "^2.1.1",
+    "watchify": "^4.0.0"
+  }
+}
