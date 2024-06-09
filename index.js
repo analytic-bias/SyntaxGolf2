@@ -42,7 +42,8 @@ document.addEventListener("DOMContentLoaded", function () {
   let sast = JSON.stringify(ast, null, 2);
   document.getElementById("problemast").innerHTML = sast;
 
-  let reftree = createTreeFromTreeArray(ast).flatMap();
+  let rawtree = createTreeFromTreeArray(ast).flatMap();
+  let reftree = rawtree.filter((x) => x.data.tag && !x.data.link);
   let refnodes = reftree.map((x) => ({
     data: {
       id: x.id,
@@ -94,7 +95,7 @@ document.addEventListener("DOMContentLoaded", function () {
         selector: "edge",
         css: {
           "curve-style": "bezier",
-          // 'target-arrow-shape': 'triangle'
+          'target-arrow-shape': 'triangle'
         },
       },
     ],
@@ -128,6 +129,7 @@ let LispLike = P.createLanguage({
   Source: function () {
     return P.regexp(/\^\d+/)
       .map((s) => ({
+        link: true,
         tag: "LKS",
         source: s.slice(1),
         id: crypto.randomUUID(),
@@ -140,6 +142,7 @@ let LispLike = P.createLanguage({
   Target: function () {
     return P.regexp(/\^t\d+/)
       .map((s) => ({
+        link: true,
         tag: "LKT",
         target: s.slice(2),
         id: crypto.randomUUID(),
