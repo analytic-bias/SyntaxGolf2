@@ -48,18 +48,15 @@ document.addEventListener("DOMContentLoaded", function () {
       content: x.data.tag + (x.data.symbol ? x.data.symbol : "")
     }
   }));
-  let refedges = [];
-  reftree.forEach(x => {
-    if (x.parent) {
-      refedges.push({
-        data: {
-          id: crypto.randomUUID(),
-          source: x.parent.id,
-          target: x.id
-        }
-      });
-    }
-  });
+  let refedges = reftree.reduce((ys, x) => {
+    if (x.parent) return ys.concat([{
+      data: {
+        id: crypto.randomUUID(),
+        source: x.parent.id,
+        target: x.id
+      }
+    }]);else return ys;
+  }, []);
   cy = (0, _cytoscape.default)({
     container: document.getElementById("cy"),
     elements: {

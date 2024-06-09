@@ -50,14 +50,14 @@ document.addEventListener("DOMContentLoaded", function () {
       content: x.data.tag + (x.data.symbol ? x.data.symbol : ""),
     },
   }));
-  let refedges = [];
-  reftree.forEach((x) => {
-    if (x.parent) {
-      refedges.push({
+  let refedges = reftree.reduce((ys, x) => {
+    if (x.parent)
+      return ys.concat([{
         data: { id: crypto.randomUUID(), source: x.parent.id, target: x.id },
-      });
-    }
-  });
+      }])
+    else
+      return ys
+  }, [])
 
   cy = cytoscape({
     container: document.getElementById("cy"),
