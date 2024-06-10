@@ -96,18 +96,21 @@ document.addEventListener("DOMContentLoaded", function () {
       nodes: refnodes.concat(refsubnodes),
       edges: refedges,
     },
+    // FIXME layout polishing
     layout: {
-      // name: 'klay'
-      name: "elk", // FIXME compounded subnodes should be in one line; add a virtual subnode and virtual edges for ELK to handle.
+      name: "elk",
+      nodeLayoutOptions: node => {
+        if (node.isParent() || node.data('parent')) {
+          return {
+            'algorithm': 'box',
+            'elk.aspectRatio': Number.MAX_SAFE_INTEGER,
+          }
+        } else
+          return {}
+      },
       elk: {
         'algorithm': 'layered',
         'elk.direction': 'DOWN',
-        'elk.separateConnectedComponents': false,
-        // 'elk.layered.compaction.connectedComponents': true,
-        // 'elk.layered.layering.coffmanGraham.layerBound': 5,
-        // 'elk.spacing.nodeNode': 40,
-        // 'elk.layered.spacing.edgeEdgeBetweenLayers': 40,
-        // 'elk.layered.layering.minWidth.upperBoundOnWidth': 100
       }
     },
 
