@@ -95,8 +95,7 @@ let refedges = refskeleton.reduce((ys, x) => x.parent ? ys.concat([{
 const sentenceFrom = (s) => s.reduce((ys, x) => 
   x.data.symbol? ys.concat(x.data.symbol) : ys, [])
 // let refsentence = sentenceFrom(rawtree)
-
-// FIXME this is impure as hell
+// FIXME this is impure as hell, by https://js.cytoscape.org/#nodes.leaves
 var refsubnodes = [];
 refwords.forEach((x) => {
   var parent = x.parent;

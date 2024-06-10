@@ -2,7 +2,7 @@
 ```bash
 npm i
 sudo npm i -g watchify
-watchify index.js -p esmify -o bundle.js
+watchify index.js -p esmify -o bundle.js --debug
 ```
 
 then serve index.html
