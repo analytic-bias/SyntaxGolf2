@@ -1,3 +1,4 @@
+export const testast = `\
 (CP 
   (AP 
     (A' 
@@ -39,4 +40,5 @@
       )
     )
   )
-)
+)\
+`
