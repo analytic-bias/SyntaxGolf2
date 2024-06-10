@@ -1,7 +1,7 @@
 // watchify index.js -p esmify -o bundle.js --debug
 
 const P = require("parsimmon");
-import { createTreeFromTreeArray } from "@lukeaus/plain-tree";
+import { createTreeFromTreeArray } from "@lukeaus/plain-tree"; // FIXME make best effort to eliminate this
 
 import cytoscape from "cytoscape";
 import snapToGrid from "cytoscape-snap-to-grid";
