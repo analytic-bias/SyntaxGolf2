@@ -79,7 +79,7 @@ let sast = JSON.stringify(ast, null, 2);
 let rawtree = createTreeFromTreeArray([ast]).flatMap();
 let refskeleton = rawtree.filter((x) => x.data.tag);
 let refwords = rawtree.filter((x) => x.data.symbol);
-let reflinks = rawtree.filter((x) => x.data.link);
+let targetedids = rawtree.filter((x) => x.data.target).map((x) => x.parent.id);
 let refnodes = refskeleton.map((x) => ({
   data: {
     id: x.id,
@@ -102,18 +102,26 @@ console.log(refsentence)
 var refsubnodes = [];
 refwords.forEach((x, i) => {
   var parent = x;
+  var l = [];
   while ((parent = parent.parent) !== null) {
-    let childid = crypto.randomUUID()
+    let childid = crypto.randomUUID();
     // console.log(x)
-    refsubnodes.push({
+    l.push({
       data: {
         id: childid,
         parent: parent.id,
+        parentsource: x.data.source,
+        parenttarget: x.data.target,
         content: x.data.symbol,
         priority: -i,
       },
     });
+    if (targetedids.includes(parent.id)) {
+      console.log(parent)
+      return;
+    }
   }
+  refsubnodes = refsubnodes.concat(l);
 }, [])
 // ENDFIX
 
@@ -149,7 +157,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // 'elk.layered.considerModelOrder.crossingCounterNodeInfluence': 0.5,
         // 'elk.layered.crossingMinimization.semiInteractive': 'true',
         'elk.layered.cycleBreaking.strategy': 'INTERACTIVE',
-        'elk.layered.layering.strategy': 'INTERACTIVE',
+        // 'elk.layered.layering.strategy': 'INTERACTIVE',
         'elk.layered.crossingMinimization.forceNodeModelOrder': 'true',
       }
     },
@@ -206,11 +214,4 @@ function interactive() {
     nodes: refnodes.concat(refsubnodes),
     edges: refedges,
   }
-  // FIXME do not show link target tags
-  // cy.$('node[linktarget]').forEach((x) => {
-  //   x.style('display', 'none')
-  // })
-  // cy.$("node[content *= 'LK']").forEach((x) => {
-  //   x.style('display', 'none')
-  // })
 }
