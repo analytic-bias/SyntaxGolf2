@@ -147,6 +147,9 @@ document.addEventListener("DOMContentLoaded", function () {
           content: "data(content)",
           "text-valign": "center",
           "text-halign": "center",
+          width: "label",
+          height: "label",
+          "padding": 5,
         },
       },
       {
@@ -174,7 +177,7 @@ document.addEventListener("DOMContentLoaded", function () {
     ],
   });
 
-  cy.snapToGrid();
-  cy.snapToGrid("snapOn");
-  cy.snapToGrid("gridOn");
+  // cy.snapToGrid();
+  // cy.snapToGrid("snapOn");
+  // cy.snapToGrid("gridOn");
 });
