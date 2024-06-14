@@ -76,9 +76,9 @@ let ast = LispLike.Problem.tryParse(testast.replace(/\n/g, ' '));
 let sast = JSON.stringify(ast, null, 2);
 
 // FIXME re-write this part, using cytoscape traversing and searching whenever possible
-let rawtree = createTreeFromTreeArray([ast]).flatMap();
+let tree = createTreeFromTreeArray([ast]);
+let rawtree = tree.flatMap();
 let refskeleton = rawtree.filter((x) => x.data.tag);
-let refwords = rawtree.filter((x) => x.data.symbol);
 let targetedids = rawtree.filter((x) => x.data.target).map((x) => x.parent.id);
 let refnodes = refskeleton.map((x) => ({
   data: {
@@ -96,16 +96,19 @@ let refedges = refskeleton.reduce((ys, x) => x.parent ? ys.concat([{
 const sentenceFrom = (s) => s.reduce((ys, x) => 
   x.data.symbol? ys.concat(x.data.symbol) : ys, [])
 let refsentence = sentenceFrom(rawtree)
-console.log(refsentence)
 // FIXME this is impure as hell, by https://js.cytoscape.org/#nodes.leaves
 // actually this is way cheaper in terms of time than the leaves method, so stay put for now...
 var refsubnodes = [];
+
+var refwords = [];
+tree.traverseDepthFirst((x) => {
+  if (x.data.symbol) refwords.push(x);
+});
 refwords.forEach((x, i) => {
   var parent = x;
   var l = [];
   while ((parent = parent.parent) !== null) {
     let childid = crypto.randomUUID();
-    // console.log(x)
     l.push({
       data: {
         id: childid,
@@ -116,10 +119,8 @@ refwords.forEach((x, i) => {
         priority: -i,
       },
     });
-    if (targetedids.includes(parent.id)) {
-      console.log(parent)
+    if (targetedids.includes(parent.id))
       return;
-    }
   }
   refsubnodes = refsubnodes.concat(l);
 }, [])
