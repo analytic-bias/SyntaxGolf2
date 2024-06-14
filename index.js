@@ -155,12 +155,7 @@ document.addEventListener("DOMContentLoaded", function () {
         'algorithm': 'layered',
         'elk.direction': 'DOWN',
         'elk.edgeRouting': 'ORTHOGONAL',
-        // 'elk.layered.crossingMinimization.strategy': 'INTERACTIVE',
-        // 'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
-        // 'elk.layered.considerModelOrder.crossingCounterNodeInfluence': 0.5,
-        // 'elk.layered.crossingMinimization.semiInteractive': 'true',
         'elk.layered.cycleBreaking.strategy': 'INTERACTIVE',
-        // 'elk.layered.layering.strategy': 'INTERACTIVE',
         'elk.layered.crossingMinimization.forceNodeModelOrder': 'true',
       }
     },
@@ -200,10 +195,6 @@ document.addEventListener("DOMContentLoaded", function () {
         css: {
           "curve-style": "bezier",
           'target-arrow-shape': 'triangle'
-          // 'curve-style': 'taxi',
-          // 'taxi-direction': 'rightward',
-          // 'target-arrow-shape': 'triangle',
-          // 'arrow-scale': 0.66,
         },
       },
     ],
