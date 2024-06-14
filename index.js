@@ -2,7 +2,6 @@
 
 const P = require("parsimmon");
 import { createTreeFromTreeArray } from "@lukeaus/plain-tree"; // FIXME make best effort to eliminate this
-
 import cytoscape from "cytoscape";
 import snapToGrid from "cytoscape-snap-to-grid";
 snapToGrid(cytoscape);
@@ -18,32 +17,28 @@ let LispLike = P.createLanguage({
     // return r.Expression.trim(P.optWhitespace).many();
     return r.Expression.trim(P.optWhitespace);
   },
-
   // expression -> symbol | source | target | list
   Expression: function (r) {
     return P.alt(r.Symbol, r.Source, r.Target, r.List);
   },
-
   // FIXLATER now we run into the compling Millinial Prize Problem of "Defining English Word"
   Symbol: function () {
     return P.regexp(/[a-zA-Z_\-][a-zA-Z0-9_\-']*/)
       .map((s) => ({ symbol: s, id: crypto.randomUUID(), children: [] }))
       .desc("symbol");
   },
-
   // source -> /^\d+/
   Source: function () {
     return P.regexp(/\^\d+/)
       .map((s) => ({
-      id: crypto.randomUUID(),
-      link: true,
-      tag: "LKS",
-      source: parseInt(s.slice(1)),
-      children: [],
+        id: crypto.randomUUID(),
+        link: true,
+        tag: "LKS",
+        source: parseInt(s.slice(1)),
+        children: [],
       }))
       .desc("source");
   },
-
   // target -> /^t\d+/
   Target: function () {
     return P.regexp(/\^t\d+/)
@@ -56,7 +51,6 @@ let LispLike = P.createLanguage({
       }))
       .desc("target");
   },
-
   // list -> "(" expression* ")"
   List: function (r) {
     return r.Expression.trim(P.optWhitespace)
@@ -76,6 +70,7 @@ let ast = LispLike.Problem.tryParse(testast.replace(/\n/g, ' '));
 let sast = JSON.stringify(ast, null, 2);
 
 // FIXME re-write this part, using cytoscape traversing and searching whenever possible
+// postponed refactoring
 let tree = createTreeFromTreeArray([ast]);
 let rawtree = tree.flatMap();
 let refskeleton = rawtree.filter((x) => x.data.tag);
@@ -97,9 +92,8 @@ const sentenceFrom = (s) => s.reduce((ys, x) =>
   x.data.symbol? ys.concat(x.data.symbol) : ys, [])
 let refsentence = sentenceFrom(rawtree)
 // FIXME this is impure as hell, by https://js.cytoscape.org/#nodes.leaves
-// actually this is way cheaper in terms of time than the leaves method, so stay put for now...
+// actually this is way cheaper in terms of time than the leaves method, so postponed
 var refsubnodes = [];
-
 var refwords = [];
 tree.traverseDepthFirst((x) => {
   if (x.data.symbol) refwords.push(x);
@@ -107,10 +101,10 @@ tree.traverseDepthFirst((x) => {
 refwords.forEach((x, i) => {
   var parent = x;
   var child = x;
-  // var l = [];
+  var l = [];
   while ((parent = parent.parent) !== null) {
     let childid = crypto.randomUUID();
-    refsubnodes.push({
+    l.push({
       data: {
         id: childid,
         parent: parent.id,
@@ -120,11 +114,15 @@ refwords.forEach((x, i) => {
         priority: -i,
       },
     });
-    if (targetedids.includes(child.id))
+    if (targetedids.includes(child.id)) {
+      l.forEach((x) => {
+        x.data.virtualtarget = true;
+      });
       break;
+    }
     child = parent;
   }
-  // refsubnodes = refsubnodes.concat(l);
+  refsubnodes = refsubnodes.concat(l);
 }, [])
 // ENDFIX
 
@@ -134,11 +132,13 @@ document.addEventListener("DOMContentLoaded", function () {
   cy = cytoscape({
     container: document.getElementById("cy"),
     autoungrabify: true,
+    minZoom: 0.75,
+    maxZoom: 3,
     elements: {
       nodes: refnodes.concat(refsubnodes),
       edges: refedges,
     },
-    // FIXME layout and style polishing
+    // FIXME layout and style polishing - mostly done, except for node tag labels
     layout: {
       name: "elk",
       nodeLayoutOptions: node => {
@@ -190,6 +190,12 @@ document.addEventListener("DOMContentLoaded", function () {
         },
       },
       {
+        selector: "node[virtualtarget], node[linksource], node[linktarget]",
+        css: {
+          opacity: 0.5,
+        },
+      },
+      {
         selector: "edge",
         css: {
           "curve-style": "bezier",
@@ -203,18 +209,29 @@ document.addEventListener("DOMContentLoaded", function () {
     ],
   });
 
+  cy.on('dragpan', function (evt) {
+    const e = cy.extent();
+    if (e.x1 + e.w < 0)
+      cy.panBy({ x: e.x1 + e.w, y: 0 });
+    if (e.y1 + e.h < 0)
+      cy.panBy({ y: e.y1 + e.h, x: 0 });
+    if (e.x2 - 2 * e.w > 0)
+      cy.panBy({ x: e.x2 - 2 * e.w, y: 0 });
+    if (e.y2 - 2 * e.h > 0)
+      cy.panBy({ y: e.y2 - 2 * e.h, x: 0 });
+  });
   // cy.snapToGrid();
   // cy.snapToGrid("snapOn");
   // cy.snapToGrid("gridOn");
 
-  interactive();
+  interactivity();
 });
 
 // ------------------------------
-
-function interactive() {
+function interactivity() {
   cy.elements = {
     nodes: refnodes.concat(refsubnodes),
     edges: refedges,
   }
+  // TODO start and restart interactivity
 }
