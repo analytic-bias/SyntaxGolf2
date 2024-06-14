@@ -35,12 +35,11 @@ let LispLike = P.createLanguage({
   Source: function () {
     return P.regexp(/\^\d+/)
       .map((s) => ({
-        id: crypto.randomUUID(),
-        link: true,
-        source: true,
-        tag: "LKS",
-        source: s.slice(1),
-        children: [],
+      id: crypto.randomUUID(),
+      link: true,
+      tag: "LKS",
+      source: parseInt(s.slice(1)),
+      children: [],
       }))
       .desc("source");
   },
@@ -51,9 +50,8 @@ let LispLike = P.createLanguage({
       .map((s) => ({
         id: crypto.randomUUID(),
         link: true,
-        target: true,
         tag: "LKT",
-        target: s.slice(2),
+        target: parseInt(s.slice(2)),
         children: [],
       }))
       .desc("target");
@@ -68,7 +66,8 @@ let LispLike = P.createLanguage({
         tag: xs[0].symbol,
         children: xs.slice(1),
       }))
-      .wrap(P.string("("), P.string(")"));
+      .wrap(P.string("("), P.string(")"))
+      .desc("edgelist");
   },
 });
 
@@ -78,7 +77,7 @@ let sast = JSON.stringify(ast, null, 2);
 
 // FIXME re-write this part, using cytoscape traversing and searching whenever possible
 let rawtree = createTreeFromTreeArray([ast]).flatMap();
-let refskeleton = rawtree.filter((x) => x.data.tag && !x.data.link);
+let refskeleton = rawtree.filter((x) => x.data.tag);
 let refwords = rawtree.filter((x) => x.data.symbol);
 let reflinks = rawtree.filter((x) => x.data.link);
 let refnodes = refskeleton.map((x) => ({
@@ -86,6 +85,8 @@ let refnodes = refskeleton.map((x) => ({
     id: x.id,
     // parent: x.parent ? x.parent.id : null,
     content: x.data.tag,
+    linksource: x.data.source,
+    linktarget: x.data.target,
   },
 }));
 let refedges = refskeleton.reduce((ys, x) => x.parent ? ys.concat([{
@@ -94,18 +95,22 @@ let refedges = refskeleton.reduce((ys, x) => x.parent ? ys.concat([{
 
 const sentenceFrom = (s) => s.reduce((ys, x) => 
   x.data.symbol? ys.concat(x.data.symbol) : ys, [])
-// let refsentence = sentenceFrom(rawtree)
+let refsentence = sentenceFrom(rawtree)
+console.log(refsentence)
 // FIXME this is impure as hell, by https://js.cytoscape.org/#nodes.leaves
+// actually this is way cheaper in terms of time than the leaves method, so stay put for now...
 var refsubnodes = [];
-refwords.forEach((x) => {
-  var parent = x.parent;
+refwords.forEach((x, i) => {
+  var parent = x;
   while ((parent = parent.parent) !== null) {
     let childid = crypto.randomUUID()
+    // console.log(x)
     refsubnodes.push({
       data: {
         id: childid,
         parent: parent.id,
         content: x.data.symbol,
+        priority: -i,
       },
     });
   }
@@ -117,11 +122,12 @@ document.addEventListener("DOMContentLoaded", function () {
   document.getElementById("problemast").innerHTML = sast;
   cy = cytoscape({
     container: document.getElementById("cy"),
+    autoungrabify: true,
     elements: {
       nodes: refnodes.concat(refsubnodes),
       edges: refedges,
     },
-    // FIXME layout polishing
+    // FIXME layout and style polishing
     layout: {
       name: "elk",
       nodeLayoutOptions: node => {
@@ -129,6 +135,7 @@ document.addEventListener("DOMContentLoaded", function () {
           return {
             'algorithm': 'box',
             'elk.aspectRatio': Number.MAX_SAFE_INTEGER,
+            'priority': node.data('priority'),
           }
         } else
           return {}
@@ -136,6 +143,14 @@ document.addEventListener("DOMContentLoaded", function () {
       elk: {
         'algorithm': 'layered',
         'elk.direction': 'DOWN',
+        'elk.edgeRouting': 'ORTHOGONAL',
+        // 'elk.layered.crossingMinimization.strategy': 'INTERACTIVE',
+        // 'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
+        // 'elk.layered.considerModelOrder.crossingCounterNodeInfluence': 0.5,
+        // 'elk.layered.crossingMinimization.semiInteractive': 'true',
+        'elk.layered.cycleBreaking.strategy': 'INTERACTIVE',
+        'elk.layered.layering.strategy': 'INTERACTIVE',
+        'elk.layered.crossingMinimization.forceNodeModelOrder': 'true',
       }
     },
 
@@ -166,8 +181,8 @@ document.addEventListener("DOMContentLoaded", function () {
       {
         selector: "edge",
         css: {
-          // "curve-style": "bezier",
-          // 'target-arrow-shape': 'triangle'
+          "curve-style": "bezier",
+          'target-arrow-shape': 'triangle'
           // 'curve-style': 'taxi',
           // 'taxi-direction': 'rightward',
           // 'target-arrow-shape': 'triangle',
@@ -180,4 +195,22 @@ document.addEventListener("DOMContentLoaded", function () {
   // cy.snapToGrid();
   // cy.snapToGrid("snapOn");
   // cy.snapToGrid("gridOn");
+
+  interactive();
 });
+
+// ------------------------------
+
+function interactive() {
+  cy.elements = {
+    nodes: refnodes.concat(refsubnodes),
+    edges: refedges,
+  }
+  // FIXME do not show link target tags
+  // cy.$('node[linktarget]').forEach((x) => {
+  //   x.style('display', 'none')
+  // })
+  // cy.$("node[content *= 'LK']").forEach((x) => {
+  //   x.style('display', 'none')
+  // })
+}
