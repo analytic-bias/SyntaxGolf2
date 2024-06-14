@@ -106,10 +106,11 @@ tree.traverseDepthFirst((x) => {
 });
 refwords.forEach((x, i) => {
   var parent = x;
-  var l = [];
+  var child = x;
+  // var l = [];
   while ((parent = parent.parent) !== null) {
     let childid = crypto.randomUUID();
-    l.push({
+    refsubnodes.push({
       data: {
         id: childid,
         parent: parent.id,
@@ -119,10 +120,11 @@ refwords.forEach((x, i) => {
         priority: -i,
       },
     });
-    if (targetedids.includes(parent.id))
-      return;
+    if (targetedids.includes(child.id))
+      break;
+    child = parent;
   }
-  refsubnodes = refsubnodes.concat(l);
+  // refsubnodes = refsubnodes.concat(l);
 }, [])
 // ENDFIX
 
