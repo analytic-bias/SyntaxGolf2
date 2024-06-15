@@ -272,7 +272,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // cy.snapToGrid("snapOn");
   // cy.snapToGrid("gridOn");
 
-  // reset(cy);
+  reset(cy);
 });
 
 // ------------------------------
