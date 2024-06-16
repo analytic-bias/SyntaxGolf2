@@ -74,6 +74,7 @@ let sast = JSON.stringify(ast, null, 2);
 let tree = createTreeFromTreeArray([ast]);
 let rawtree = tree.flatMap();
 let refskeleton = rawtree.filter((x) => x.data.tag);
+let sourcedids = rawtree.filter((x) => x.data.source).map((x) => x.parent.id);
 let targetedids = rawtree.filter((x) => x.data.target).map((x) => x.parent.id);
 let refnodes = refskeleton.map((x) => ({
   data: {
@@ -109,8 +110,6 @@ refwords.forEach((x, i) => {
       data: {
         id: childid,
         parent: parent.id,
-        parentsource: x.data.source,
-        parenttarget: x.data.target,
         content: x.data.symbol,
         priority: -i,
       },
@@ -120,6 +119,11 @@ refwords.forEach((x, i) => {
         x.data.virtualtarget = true;
       });
       break;
+    }
+    if (sourcedids.includes(child.id)) {
+      l.forEach((x) => {
+        x.data.virtualsource = true;
+      });
     }
     child = parent;
   }
@@ -186,7 +190,7 @@ document.addEventListener("DOMContentLoaded", function () {
         },
       },
       {
-        selector: "node[virtualtarget], node[linksource], node[linktarget]",
+        selector: "node[virtualtarget]",
         css: {
           opacity: 0.5,
         },
