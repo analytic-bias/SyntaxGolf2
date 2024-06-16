@@ -131,7 +131,7 @@ refwords.forEach((x, i) => {
 }, [])
 // ENDFIX
 
-// let cy;
+// export var cy;
 document.addEventListener("DOMContentLoaded", function () {
   document.getElementById("problemexp").innerHTML = testast;
   cy = cytoscape({
@@ -279,15 +279,18 @@ document.addEventListener("DOMContentLoaded", function () {
   // cy.snapToGrid("snapOn");
   // cy.snapToGrid("gridOn");
 
-  reset(cy);
+  document.getElementById("reset").onclick = reset;
+  document.getElementById("set").onclick = set;
+  // reset(cy);
 });
 
 // ------------------------------
-function reset(cy) {
-  cy.elements = {
-    nodes: refnodes.concat(refsubnodes),
-    edges: refedges,
-  }
+
+function set() {
+  cy.$('').forEach(x => x.style('visibility', 'visible'))
+}
+
+function reset() {
   let hidenodes = cy.$(':parent[^root], :orphan[^root]')
   let hideedges = hidenodes.connectedEdges()
   hidenodes.style('visibility', 'hidden')
