@@ -130,7 +130,6 @@ refwords.forEach((x, i) => {
 // let cy;
 document.addEventListener("DOMContentLoaded", function () {
   document.getElementById("problemexp").innerHTML = testast;
-  document.getElementById("problemast").innerHTML = sast;
   cy = cytoscape({
     container: document.getElementById("cy"),
     autoungrabify: true,
@@ -222,6 +221,10 @@ document.addEventListener("DOMContentLoaded", function () {
     'control-point-distances': '-200',
     'control-point-weights': '0.5',
   })
+
+  cy.on('mouseover', function (evt) {
+    document.getElementById("elementdata").innerHTML = JSON.stringify(evt.target.data(), null, 2);
+  });
 
   cy.on('dragpan', function (evt) {
     const e = cy.extent();
