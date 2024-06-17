@@ -79,7 +79,6 @@ let targetedids = rawtree.filter((x) => x.data.target).map((x) => x.parent.id);
 let refnodes = refskeleton.map((x) => ({
   data: {
     id: x.id,
-    // parent: x.parent ? x.parent.id : null,
     content: x.data.tag,
     linksource: x.data.source,
     linktarget: x.data.target,
@@ -132,38 +131,56 @@ refwords.forEach((x, i) => {
 // ENDFIX
 
 // export var cy;
+const cylayout = {
+  name: "elk",
+  nodeLayoutOptions: node => {
+    if (node.isParent() || node.data('parent')) {
+      return {
+        'algorithm': 'box',
+        'elk.interactive': false,
+        // 'elk.spacing.nodeNode': 0,
+        // 'elk.box.packingMode': 'GROUP_INC',
+        'elk.aspectRatio': Number.MAX_SAFE_INTEGER,
+        'priority': node.data('priority'),
+      };
+    } else
+      return {}
+  },
+  elk: {
+    'algorithm': 'layered',
+    'elk.direction': 'DOWN',
+    // 'elk.edgeRouting': 'ORTHOGONAL',
+    // 'elk.layered.cycleBreaking.strategy': 'INTERACTIVE',
+    'elk.layered.crossingMinimization.forceNodeModelOrder': 'true',
+  }
+};
+var cursornodeid, cursoredgeid;
 document.addEventListener("DOMContentLoaded", function () {
   document.getElementById("problemexp").innerHTML = testast;
   cy = cytoscape({
     container: document.getElementById("cy"),
-    autoungrabify: true,
+    // autoungrabify: true,
     minZoom: 0.75,
     maxZoom: 3,
     elements: {
-      nodes: refnodes.concat(refsubnodes),
-      edges: refedges,
+      nodes: refnodes.concat(refsubnodes).concat({
+        data: {
+          id: (cursornodeid = crypto.randomUUID()),
+          style: { 'display': 'none' },
+        },
+      }),
+      edges: refedges.concat({
+        data: {
+          id: (cursoredgeid = crypto.randomUUID()),
+          source: cursornodeid,
+          target: cursornodeid,
+          virtual: true,
+          style: { 'display': 'none' },
+        },
+      }),
     },
     // FIXME layout and style polishing - mostly done, except for node tag labels
-    layout: {
-      name: "elk",
-      nodeLayoutOptions: node => {
-        if (node.isParent() || node.data('parent')) {
-          return {
-            'algorithm': 'box',
-            'elk.aspectRatio': Number.MAX_SAFE_INTEGER,
-            'priority': node.data('priority'),
-          }
-        } else
-          return {}
-      },
-      elk: {
-        'algorithm': 'layered',
-        'elk.direction': 'DOWN',
-        'elk.edgeRouting': 'ORTHOGONAL',
-        'elk.layered.cycleBreaking.strategy': 'INTERACTIVE',
-        'elk.layered.crossingMinimization.forceNodeModelOrder': 'true',
-      }
-    },
+    layout: cylayout,
 
     style: [
       {
@@ -204,6 +221,7 @@ document.addEventListener("DOMContentLoaded", function () {
       },
     ],
   });
+  cy.$('').forEach(x => x.ungrabify());
   let linktargets = cy.$('[linktarget]')
   cy.$('[linksource]').forEach((x) => {
     let t = linktargets.find(y => y.data('linktarget') === x.data('linksource'))
@@ -225,11 +243,9 @@ document.addEventListener("DOMContentLoaded", function () {
     'control-point-distances': '-200',
     'control-point-weights': '0.5',
   })
-
   cy.on('mouseover', function (evt) {
     document.getElementById("elementdata").innerHTML = JSON.stringify(evt.target.data(), null, 2);
   });
-
   cy.on('dragpan', function (evt) {
     const e = cy.extent();
     if (e.x1 + e.w < 0)
@@ -241,13 +257,20 @@ document.addEventListener("DOMContentLoaded", function () {
     if (e.y2 - 2 * e.h > 0)
       cy.panBy({ y: e.y2 - 2 * e.h, x: 0 });
   });
-  // cy.$(':parent').forEach((x) => x.unselectify());
   cy.on('select', function (evt) {
     if (evt.target.isParent() || evt.target.isEdge())
       evt.target.unselect()
-  })
-  // const wordsbelow = (x) => x.outgoers().children().filter((y) => y.data('content'))
+  });
+  function flashselected(color) {
+    cy.$(':selected').forEach(node => {
+      node.style('background-color', color);
+      setTimeout(() => {
+        node.style('background-color', '');
+      }, 100);
+    });
+  }
   cy.on('cxttap', function (evt) {
+    if (cy.$(':selected').length === 0) return;
     let outgoers = cy.$(':selected')[0] // FIXME [0] not very robust
       .parent().outgoers()
     let selectedvirtual = cy.$(':selected').findIndex(x => x.data('virtualtarget'))
@@ -258,22 +281,26 @@ document.addEventListener("DOMContentLoaded", function () {
     )
     let selection = cy.$(':selected').map(x => x.data().content)
     let hit = potentials.findIndex(x => JSON.stringify(x) === JSON.stringify(selection))
-    if (hit > -1) {
-      outgoers[hit].style('visibility', 'visible')
-      outgoers[hit].target().style('visibility', 'visible')
+    let movenotdone = cy.$(':selected')[0].parent().children()
+                        .filter(x => x.style('display') === 'none').length;
+    if (hit > -1 || movenotdone > 0) {
+      outgoers[hit].style('display', 'element')
+      outgoers[hit].target().style('display', 'element')
       outgoers[hit].target().children().forEach(x => {
         if (x.data('virtualtarget')) {
-          console.log(cy.$('edge[virtual]').map(z => z.data()))
-          console.log(x.parent().id())
-          console.log(x.id())
-          cy.$('edge[virtual]').filter(y => y.data('source') === x.parent().id()).style('visibility', 'visible')
-          // console.log(x.parent().outgoers())
-          // x.parent().outgoers().filter(y => y.data('virtual')).forEach(y => y.style('visibility', 'visible'))
+          cy.$('edge[virtual]').filter(y => y.data('source') === x.parent().id()).style('display', 'element')
         }
       });
+      flashselected('green');
     } else {
+      flashselected('red');
     }
     cy.$(':selected').unselect()
+  });
+  // cy.$('node[virtualsource]').forEach(x => x.grabify());
+  cy.on('dbltap', 'node[virtualsource]', function (evt) {
+    grabbedid = evt.target.parent().id;
+
   });
   // cy.snapToGrid();
   // cy.snapToGrid("snapOn");
@@ -287,15 +314,16 @@ document.addEventListener("DOMContentLoaded", function () {
 // ------------------------------
 
 function set() {
-  cy.$('').forEach(x => x.style('visibility', 'visible'))
+  cy.$('').forEach(x => x.style('display', 'element'))
+  cy.$('[virtualtarget]').style('display', 'element');
 }
 
 function reset() {
   let hidenodes = cy.$(':parent[^root], :orphan[^root]')
   let hideedges = hidenodes.connectedEdges()
-  hidenodes.style('visibility', 'hidden')
-  hideedges.forEach(x => x.style('visibility', 'hidden'))
-
+  hidenodes.style('display', 'none')
+  hideedges.forEach(x => x.style('display', 'none'))
+  cy.$('[virtualtarget]').style('display', 'none');
   // TODO drag movement
   // TODO choose tag
 }
