@@ -315,7 +315,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 function set() {
   cy.$('').forEach(x => x.style('display', 'element'))
-  cy.$('[virtualtarget]').style('display', 'element');
+  // cy.$('[virtualtarget]').style('display', 'element');
 }
 
 function reset() {
@@ -323,7 +323,7 @@ function reset() {
   let hideedges = hidenodes.connectedEdges()
   hidenodes.style('display', 'none')
   hideedges.forEach(x => x.style('display', 'none'))
-  cy.$('[virtualtarget]').style('display', 'none');
+  // cy.$('[virtualtarget]').style('display', 'none');
   // TODO drag movement
   // TODO choose tag
 }
