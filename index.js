@@ -130,7 +130,8 @@ refwords.forEach((x, i) => {
 }, [])
 // ENDFIX
 
-// export var cy;
+var cy;
+const touchdevice = (('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0));
 const cylayout = {
   name: "elk",
   nodeLayoutOptions: node => {
@@ -162,21 +163,22 @@ document.addEventListener("DOMContentLoaded", function () {
     // autoungrabify: true,
     minZoom: 0.75,
     maxZoom: 3,
+    selectionType: touchdevice ? 'additive' : 'single',
     elements: {
       nodes: refnodes.concat(refsubnodes).concat({
-        data: {
-          id: (cursornodeid = crypto.randomUUID()),
-          style: { 'display': 'none' },
-        },
+      data: {
+        id: (cursornodeid = crypto.randomUUID()),
+        style: { 'display': 'none' },
+      },
       }),
       edges: refedges.concat({
-        data: {
-          id: (cursoredgeid = crypto.randomUUID()),
-          source: cursornodeid,
-          target: cursornodeid,
-          virtual: true,
-          style: { 'display': 'none' },
-        },
+      data: {
+        id: (cursoredgeid = crypto.randomUUID()),
+        source: cursornodeid,
+        target: cursornodeid,
+        virtual: true,
+        style: { 'display': 'none' },
+      },
       }),
     },
     // FIXME layout and style polishing - mostly done, except for node tag labels
